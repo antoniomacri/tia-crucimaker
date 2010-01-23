@@ -1,0 +1,172 @@
+
+body
+{
+	font-family: Verdana;
+	width: 70%;
+	margin: 0 auto;
+	margin-top: 5px;
+}
+
+h2
+{
+	font-family: Broadway;
+	margin-top: 30px;
+	letter-spacing: 0.2em;
+}
+
+#all
+{
+	border-style: dashed;
+	border-width: thin;
+	border-left-color: Gray;
+	border-right-color: Gray;
+}
+
+#header
+{
+	background-color: Blue;
+}
+
+#middle
+{
+	position: relative;
+	background-color: Blue;
+}
+
+#content
+{
+	position: absolute;
+}
+
+#step-2, #step-3
+{
+	display: none;
+}
+
+#workspace
+{
+	border: solid 1px black;
+	margin-left: auto;
+	margin-right: auto;
+	overflow: hidden;
+}
+
+#ws-right
+{
+	width: 250px;
+	float: right;
+	border: 1px blue solid;
+}
+
+#ws-left
+{
+	width: 350px;
+	display: inline;
+}
+
+table.board
+{
+	border: 1px gray solid;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+td.cell, td.cell-numbered
+{
+	text-transform: uppercase;
+	border: 1px solid gray;
+	width: 1.5em;
+	height: 1.5em;
+}
+
+td.cell
+{
+	text-align: center;
+}
+
+td.cell:hover
+{
+	border: 1px solid blue;
+}
+
+td.cell-numbered
+{
+	vertical-align: top;
+	text-align: left;
+}
+
+span.cell-number
+{
+	vertical-align: top;
+	font-size: xx-small;
+	margin: 0px;
+	padding: 0px;
+}
+
+
+span.suggestion
+{
+	cursor: default;
+	text-transform: capitalize;
+}
+
+
+#suggestions-header, #h-suggestions, #v-suggestions
+{
+	display: none;
+}
+
+#suggestions-header, #h-suggestions-title, #v-suggestions-title
+{
+	font-weight: bold;
+}
+
+span.suggestion-dragging
+{
+	cursor: default;
+	text-transform: uppercase;
+	position: fixed;
+	z-index: 10;
+}
+
+#when-board-completed
+{
+	visibility: hidden;
+}
+
+form
+{
+	font-size: smaller;
+}
+
+fieldset
+{
+	margin: 5px 4px 5px 4px;
+	vertical-align: top;
+}
+
+legend
+{
+	font-weight: bold;
+}
+
+label
+{
+	display: block;
+}
+
+fieldset#horizontal-defs, fieldset#vertical-defs
+{
+	display: inline;
+}
+
+div#definitions
+{
+	margin-left: auto;
+	margin-right: auto;
+}
+
+input
+{
+	text-align: right;
+}

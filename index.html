@@ -1,0 +1,419 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link href="css/video.css" rel="stylesheet" type="text/css">
+
+    <script type="text/javascript" src="js/dragdrop.js"> </script>
+
+    <script type="text/javascript" src="js/Cell.js"> </script>
+
+    <script type="text/javascript" src="js/Ajax.js"> </script>
+
+    <script type="text/javascript" src="js/stampa.js"> </script>
+
+    <script type="text/javascript">
+    
+    var CrossWordSchema = null;
+    
+    var hSuggestionsTitle = null;
+    var hSuggestionsContent = null;
+    var vSuggestionsTitle = null;
+    var vSuggestionsContent = null;
+    var board = null;
+    var horizontal = null;
+    var vertical = null;
+    var rightPanel = null;
+    var annerisci = null;
+    var suggest = null;
+    var horizontalLetters = null;
+    var verticalLetters = null;
+    var letters = null;
+    var whenBoardCompleted = null;
+    var horizontalDefs = null;
+    var verticalDefs = null;
+    var suggestion = null;
+    
+    function Init()
+    {
+        suggestionsHeader = document.getElementById("suggestions-header");
+        hSuggestions = document.getElementById("h-suggestions");
+        hSuggestionsTitle = document.getElementById("h-suggestions-title");
+        hSuggestionsContent = document.getElementById("h-suggestions-content");
+        vSuggestions = document.getElementById("v-suggestions");
+        vSuggestionsTitle = document.getElementById("v-suggestions-title");
+        vSuggestionsContent = document.getElementById("v-suggestions-content");
+        board = document.getElementById("board");
+        horizontal = document.getElementById("horizontal");
+        vertical = document.getElementById("vertical");
+        rightPanel = document.getElementById("ws-right");
+        annerisci = document.getElementById("annerisci");
+        suggest = document.getElementById("suggest");
+        suggestion = document.getElementById("suggestion");
+        horizontalLetters = document.getElementById("horizontal-letters");
+        verticalLetters = document.getElementById("vertical-letters");
+        letters = document.getElementById("letters");
+        whenBoardCompleted = document.getElementById("when-board-completed");
+        horizontalDefs = document.getElementById("horizontal-defs");
+        verticalDefs = document.getElementById("vertical-defs");
+
+        document.onkeydown = OnKeyDown;
+        document.onmousedown = Drag;
+    }
+    
+    function CancelBubble(e)
+    { (e||window.event).cancelBubble=true; }
+
+    function CreateTable()
+    {
+        while(board.hasChildNodes())
+        {
+            board.removeChild(board.lastChild);
+        }
+
+        CrossWordSchema = new Array();
+        var rows = document.getElementById("rows");
+        var columns = document.getElementById("columns");
+        for(var i=0; i<rows.value; i++)
+        {
+            CrossWordSchema[i] = new Array();
+            var row = board.insertRow(i);
+            for(var j=0; j<columns.value; j++)
+            {
+                var el = document.createElement("TD");
+                el.setAttribute("class", "cell");
+				el.onclick = new Function("CrossWordSchema[" + i + "][" + j + "].Select();"); 
+                el.ondblclick = new Function("CrossWordSchema[" + i + "][" + j + "].Blacken();");
+                el.appendChild(document.createTextNode(""));
+                board.rows.item(i).appendChild(el);
+                CrossWordSchema[i][j] = new Cell(i,j);
+            }
+        }
+
+        CrossWordSchema[0][0].Select();
+        var step2 = document.getElementById("step-2");
+        if(step2.style)
+            step2.style.display = "block";
+        else
+            step2.display = "block";
+    }
+    
+    function CheckFinished()
+    {
+        var completed = true;
+        var i,j;
+        for(i=0; i<CrossWordSchema.length; i++)
+        {
+            for(j=0; j<CrossWordSchema[i].length; j++)
+            {
+                var item = CrossWordSchema[i][j];
+                var s = item.TableCell.firstChild.nodeValue;
+                if((item.IsBlackened == false) && (s == ""))
+                {
+                    completed = false;
+                }
+            }
+        }
+        
+        if(whenBoardCompleted.style)
+            whenBoardCompleted.style.visibility = completed ?  "visible" : "hidden";
+        else
+            whenBoardCompleted.visibility = completed ?  "visible" : "hidden";
+    }
+
+    function AllowInsertDefinitions()
+    {
+        // Impedisco che questa funzione sia chiamata nuovamente a seguito di modifiche
+        // che l'utente ha fatto allo schema
+        if(whenBoardCompleted.style)
+            whenBoardCompleted.style.display = "none";
+        else
+            whenBoardCompleted.display = "none";
+        
+        
+        var step3 = document.getElementById("step-3");
+        if(step3.style)
+            step3.style.display = "block";
+        else
+            step3.display = "block";
+
+
+        var boardNumbered = document.getElementById("board-numbered");
+        while(boardNumbered.hasChildNodes())
+        {
+            boardNumbered.removeChild(boardNumbered.lastChild);
+        }
+
+        var num = 1;
+        for(i=0; i<CrossWordSchema.length; i++)
+        {
+            var r = document.createElement("tr");
+            for(j=0; j<CrossWordSchema[i].length; j++)
+            {
+                var c = document.createElement("td");
+                c.setAttribute("class", "cell-numbered");
+                
+                var cell = CrossWordSchema[i][j];
+                if (cell.IsBlackened)  {
+                    if(c.style)  c.style.backgroundColor = "black";
+                    else         c.backgroundColor = "black";
+                }
+                else if(cell.StartsWord()) {
+                    var s = document.createElement("span");
+                    s.setAttribute("class", "cell-number");
+                    s.appendChild(document.createTextNode(num));
+                    c.appendChild(s);
+                    num++;
+                }
+                r.appendChild(c);
+            }
+            boardNumbered.appendChild(r);
+        }
+        
+        var num = 1;
+        for(i=0; i<CrossWordSchema.length; i++)
+        {
+            for(j=0; j<CrossWordSchema[i].length; j++)
+            {
+                var cell = CrossWordSchema[i][j];
+                if(!cell.IsBlackened)  {
+                    var v = false, h = false;
+                    if(cell.StartsHorizontalWord()) {
+                        h = true;
+                        horizontalDefs.appendChild(CreateDefinitionLabel(num, cell.GetHorizontalText()));
+                    }
+                    if(cell.StartsVerticalWord()) {
+                        v = true;
+                        verticalDefs.appendChild(CreateDefinitionLabel(num, cell.GetVerticalText()));
+                    }
+                    if(v || h)
+                    {
+                        num++;
+                    }
+                }
+            }
+        }
+    }
+    
+    function CreateDefinitionLabel(num, text)
+    {
+        var label = document.createElement("label");
+        label.appendChild(document.createTextNode(num + ". " + text));
+        label.appendChild(document.createElement("br"));
+        var textArea = document.createElement("textarea");
+        textArea.setAttribute("rows", "2");
+        textArea.setAttribute("cols", "40");
+        textArea.onkeydown = CancelBubble;
+        label.appendChild(textArea);
+        return label;
+    }
+   
+    function OnKeyDown(e)
+    {
+        e = e || window.event;
+        var src = e.target || e.srcElement;
+
+        if(selected)
+        {
+            return selected.ProcessKey(e.keyCode, e.shiftKey);
+        }
+    }
+
+    function Blacken()
+    {
+        if(selected)
+        {
+            selected.Blacken();
+        }
+    }
+
+    function checkNumeric(e)
+    {
+        e = e || window.event;
+        var src = e.target || e.srcElement;
+
+        var reg = new RegExp("^\\d+$");
+        if (reg.test(src.value))
+        {
+            var val = parseInt(src.value);
+            if (val >= 1 && val <= 25)
+            {
+                return true;
+            }
+        }
+        alert("Inserisci un numero compreso tra 1 e 25!");
+        // altrimenti la semplice src.select() non funziona su firefox
+        setTimeout(function(){src.select();src.focus();}, 1);
+	    return false;
+    }
+
+    </script>
+
+</head>
+<body onload="javascript:Init();">
+    <div id="all">
+        <div id="header">
+        </div>
+        <div id="middle">
+            <div id="content">
+                <div id="step-1">
+                    <h2>
+                        Crea il tuo cruciverba!</h2>
+                    <hr>
+                    <p>
+                        Benvenuto in CruciMaker! Puoi creare un cruciverba a schema regolare, a schema libero
+                        o anche un cruciverba crittografato.</p>
+                    <p>
+                        Scegli la dimensione dello schema...</p>
+                    <div>
+                        <table>
+                            <!-- Siccome le tabelle in firefox non supportano onkeydown, per "ascoltare" i tasti che l'utente
+                                 preme da tastiera devo impostare la onkeydown del document, simulando che i tasti siano premuti
+                                 sulla tabella.
+                                 Impostando però onkeydown sul document, devo disabilitare il bubbling dei tasti premuti sugli
+                                 input e le textarea, per impedire che questi siano inoltrati al document e compaiano di
+                                 conseguenza sulla tabella. -->
+                            <tr>
+                                <td id="prova">
+                                    Righe:
+                                </td>
+                                <td>
+                                    <input type="text" id="rows" value="10" onkeydown="CancelBubble(event);" onblur="checkNumeric(event);">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Colonne:
+                                </td>
+                                <td>
+                                    <input type="text" id="columns" value="10" onkeydown="CancelBubble(event);" onblur="checkNumeric(event);">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <p>
+                        ...quindi <a href="javascript:CreateTable();">crealo</a> e inizia a compilarlo!</p>
+                </div>
+                <div id="step-2">
+                    <h2>
+                        Passo 1: Compila lo schema</h2>
+                    <hr>
+                    <p>
+                        Usa le frecce per spostarti all'interno dello schema e inserisci le parole che costruiranno
+                        il tuo cruciverba. Puoi usare il tasto CANC per cancellare la lettera evidenziata.
+                    </p>
+                    <p>
+                        Se vuoi inserire una parola in verticale, tieni premuto il tasto SHIFT mentre ne
+                        inserisci le lettere.</p>
+                    <p>
+                        Per annerire una cella, puoi spuntare la casella &quot;Annerisci&quot; sulla destra
+                        oppure più semplicemente farci doppio click.</p>
+                    <p>
+                        Puoi usare i <em>suggerimenti</em> che ti vengono forniti: seleziona una casella
+                        e clicca sul bottone <strong>Suggerimenti</strong>. Ti verranno forniti alcuni suggerimenti
+                        che puoi inserire verticalmente o orizzontalmente. Trascina la parola da inserire
+                        e rilasciala nel punto dove vuoi inserirla. Se le caselle si colorano di verde,
+                        allora tutto ok! Non puoi invece inserire parole aventi un numero di lettere diverse
+                        dal numero di caselle.</p>
+                    <p>
+                        Analogamente a quando inserisci lettere, tieni premuto il tasto SHIFT (MAIUSC) per
+                        inserire il termine verticalmente anziché orizzontalmente.</p>
+                    <p>
+                        Dopo aver completato lo schema, potrai decidere se stamparlo.</p>
+                    <p>
+                        <strong>Nota bene:</strong> se stai usando Firefox, devi accertarti che l'opzione
+                        &quot;Cerca nel testo quando si digita qualcosa&quot; sia disabilitata (Strumenti/Opzioni/Avanzate/Generali).
+                    </p>
+                    <div id="workspace">
+                        <div id="ws-right">
+                            <form action="#" name="panel">
+                            <fieldset>
+                                <legend>Generali</legend>
+                                <label>
+                                    Annerisci
+                                    <input type="checkbox" id="annerisci" onclick="javascript:Blacken();">
+                                </label>
+                            </fieldset>
+                            <fieldset id="letters">
+                                <legend>Lettere</legend>Orizzontale: <span id="horizontal-letters">&nbsp;</span>
+                                lettere.<br>
+                                Verticale: <span id="vertical-letters">&nbsp;</span> lettere.
+                            </fieldset>
+                            <fieldset id="suggestion">
+                                <legend>Suggerimenti</legend>
+                                <button id="suggest" type="button" onclick="javascript:ShowSuggestions();">
+                                    Suggerisci</button>
+                            </fieldset>
+                            </form>
+                        </div>
+                        <div id="ws-left">
+                            <table id="board" class="board">
+                                <tr>
+                                    <td>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div>
+                            <p id="suggestions-header">
+                                &nbsp;</p>
+                        </div>
+                        <div id="h-suggestions">
+                            <p id="h-suggestions-title">
+                                &nbsp;
+                            </p>
+                            <p id="h-suggestions-content">
+                            </p>
+                        </div>
+                        <div id="v-suggestions">
+                            <p id="v-suggestions-title">
+                                &nbsp;
+                            </p>
+                            <p id="v-suggestions-content">
+                            </p>
+                        </div>
+                    </div>
+                    <div id="when-board-completed">
+                        <p>
+                            Hai completato lo schema! Clicca <a href="javascript:AllowInsertDefinitions();">qui</a>
+                            per procedere.
+                        </p>
+                    </div>
+                </div>
+                <div id="step-3">
+                    <h2>
+                        Passo 2: Completa il cruciverba</h2>
+                    <hr>
+                    <p>
+                        Lo schema è completato. Ora puoi decidere se <a href="javascript:StampaCrittografato();">
+                            stamparlo come cruciverba crittografato</a> oppure inserire le definizioni qui
+                        sotto e stamparlo come cruciverba definito a schema regolare o a schema libero.
+                    </p>
+                    <div>
+                        <table class="board" id="board-numbered">
+                            <tr>
+                                <td>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div id="definitions">
+                        <form action="#" name="definitions">
+                        <fieldset id="horizontal-defs">
+                            <legend>Orizzontali</legend>
+                        </fieldset>
+                        <fieldset id="vertical-defs">
+                            <legend>Verticali</legend>
+                        </fieldset>
+                        </form>
+                    </div>
+                    <p>
+                        Dopo aver inserito le definizioni, puoi stampare lo schema come cruciverba <a href="javascript:StampaDefinito();">
+                            definito a schema libero</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

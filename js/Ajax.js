@@ -72,6 +72,7 @@ function ShowSuggestions()
     hPattern += "$";
     vPattern += "$";
 
+    /*
     var xmlHttp = GetXmlHttpObject();
     if(xmlHttp == null)
     {
@@ -85,6 +86,10 @@ function ShowSuggestions()
             var text = xmlHttp.responseText;
             var xmlDoc = LoadXmlDocument(text);
             if(ParseAndShowHints(xmlDoc, "horizontal", hSuggestionsContent))
+            */
+            var xmlDoc = null;
+            if(ParseAndShowHints(xmlDoc, "horizontal", hSuggestionsContent, WORD_LIST, hPattern))
+            /**/
             {
                 if (hSuggestionsTitle.firstChild)
                     hSuggestionsTitle.firstChild.nodeValue = "Suggerimenti orizzontali:";
@@ -97,7 +102,11 @@ function ShowSuggestions()
                 else
                     hSuggestionsTitle.nodeValue = "Nessun suggerimento orizzontale trovato!";
             }
+            /*
             if(ParseAndShowHints(xmlDoc, "vertical", vSuggestionsContent))
+            */
+            if(ParseAndShowHints(xmlDoc, "vertical", vSuggestionsContent, WORD_LIST, vPattern))
+            /**/
             {
                 if (vSuggestionsTitle.firstChild)
                     vSuggestionsTitle.firstChild.nodeValue = "Suggerimenti verticali:";
@@ -125,19 +134,24 @@ function ShowSuggestions()
             } else {
                 suggestionsHeader.display = "none";
             }
+            /*
        }
     }
+    */
     
+    /*
     var request = "suggestions.php?hpattern=" + escape(hPattern) + "&vpattern=" + escape(vPattern);
     xmlHttp.open("GET", request, true);
     // xmlHttp.setRequestHeader("Cache-Control", "no-cache");
     xmlHttp.send(null);
+    */
     
     if(suggestionsHeader.style)  {
         suggestionsHeader.style.display = "block";
     } else {
         suggestionsHeader.display = "block";
     }
+    /*
     if(hSuggestions.style)  {
         hSuggestions.style.display = "none";
     } else {
@@ -153,12 +167,18 @@ function ShowSuggestions()
     } else  {
         suggestionsHeader.nodeValue = "Attendere...";
     }
+    */
 }
 
 
+/*
 function ParseAndShowHints(xmlDoc, which, suggestionsContent)
+*/
+function ParseAndShowHints(xmlDoc, which, suggestionsContent, db, pattern)
+/**/
 {
     var nodes;
+    /*
     try {
         // Internet Explorer
         nodes = xmlDoc.selectNodes("hints/" + which + "/h");
@@ -166,6 +186,14 @@ function ParseAndShowHints(xmlDoc, which, suggestionsContent)
         // Firefox
         nodes = xmlDoc.getElementsByTagName(which)[0].getElementsByTagName("h");
     }
+    */
+    nodes = [];
+    for (var i = 0; i < db.length && nodes.length < 100; i++) {
+        if (db[i].match(pattern)) {
+            nodes.push(db[i]);
+        }
+    }
+    /**/
 
     if (nodes.length > 0)
     {
@@ -175,7 +203,7 @@ function ParseAndShowHints(xmlDoc, which, suggestionsContent)
         for (var i=0; i<nodes.length; i++)
         {
             var span = suggestionsContent.appendChild(document.createElement("span"));
-            var node = span.appendChild(document.createTextNode(nodes[i].firstChild.nodeValue));
+            var node = span.appendChild(document.createTextNode(nodes[i]/*.firstChild.nodeValue*/));
             span.setAttribute("class", "suggestion");
             if(i < nodes.length-1)  {
                 suggestionsContent.appendChild(document.createTextNode(", "));
